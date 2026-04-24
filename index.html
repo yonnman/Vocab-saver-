@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocab Saver</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb; --surface: #faf8f4; --surface2: #eeeae0;
+  --border: #d8d2c4; --border-light: #e8e3d8;
+  --text: #1a1814; --text2: #5a5548; --text3: #9a9488;
+  --accent: #2d5a3d; --accent-light: #e8f0eb;
+  --accent2: #8b5e3c; --accent2-light: #f5ede6;
+  --success: #2d5a3d; --error: #8b2020;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── POPUP MODE (khi có ?text= trong URL) ── */
+.popup-wrap { max-width: 480px; margin: 0 auto; padding: 20px; }
+.hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.ttl { font-family: 'Instrument Serif', serif; font-size: 22px; }
+.ttl em { font-style: italic; color: var(--accent); }
+.tag { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.tc { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(45,90,61,.2); }
+.to { background: var(--accent2-light); color: var(--accent2); border: 1px solid rgba(139,94,60,.2); }
+.vocab { font-family: 'Instrument Serif', serif; font-size: 26px; margin-bottom: 14px; letter-spacing: -.02em; }
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.field label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+.field input, .field textarea { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); outline: none; resize: vertical; line-height: 1.5; width: 100%; transition: border-color .15s; }
+.field textarea { min-height: 52px; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+.r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ft { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light); }
+.st { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 8px; min-height: 20px; }
+.st.err { color: var(--error); }
+.st.ok { color: var(--success); }
+.btns { display: flex; gap: 8px; }
+.bd { font-family: 'DM Mono', monospace; font-size: 11px; padding: 0 14px; height: 32px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text2); cursor: pointer; }
+.bd:hover { border-color: var(--text2); }
+.bs { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; padding: 0 16px; height: 32px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; }
+.bs:hover { opacity: .85; }
+.bs:disabled { opacity: .35; cursor: not-allowed; }
+.sp { width: 11px; height: 11px; border: 1.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .65s linear infinite; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── MAIN APP MODE ── */
+.app { max-width: 700px; margin: 0 auto; padding: 48px 24px 80px; }
+.header { margin-bottom: 40px; }
+.header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.title { font-family: 'Instrument Serif', serif; font-size: 36px; line-height: 1; letter-spacing: -0.02em; }
+.title em { font-style: italic; color: var(--accent); }
+.badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 3px; background: var(--surface2); color: var(--text3); border: 1px solid var(--border); margin-top: 6px; }
+.subtitle { font-size: 14px; color: var(--text2); line-height: 1.6; }
+.tabs { display: flex; margin-bottom: 32px; border-bottom: 1.5px solid var(--border); }
+.tab { font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 20px; background: none; border: none; cursor: pointer; color: var(--text3); position: relative; transition: color 0.15s; letter-spacing: 0.03em; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--text); font-weight: 500; }
+.tab.active::after { content: ''; position: absolute; bottom: -1.5px; left: 0; right: 0; height: 1.5px; background: var(--accent); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.steps { display: flex; flex-direction: column; }
+.step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border-light); }
+.step:last-child { border-bottom: none; }
+.step-num { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.step-content { flex: 1; }
+.step-title { font-weight: 500; font-size: 14px; margin-bottom: 6px; }
+.step-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
+.step-desc:last-child { margin-bottom: 0; }
+.code-block { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--text); color: #c8f0a0; padding: 12px 16px; border-radius: 7px; line-height: 1.7; overflow-x: auto; margin-bottom: 10px; white-space: pre-wrap; word-break: break-all; }
+.copy-btn { font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text2); margin-top: 6px; transition: background .15s; }
+.copy-btn:hover { background: var(--border); }
+.copy-btn.copied { color: var(--success); border-color: var(--success); }
+.config-fields { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.cfg-field { display: flex; flex-direction: column; gap: 5px; }
+.cfg-field label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.cfg-field input { font-family: 'DM Mono', monospace; font-size: 12px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text); outline: none; transition: border-color 0.15s; }
+.cfg-field input:focus { border-color: var(--accent); }
+.cfg-field input::placeholder { color: var(--text3); }
+.save-btn { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 7px; cursor: pointer; }
+.save-btn:hover { opacity: 0.85; }
+.saved-msg { font-size: 12px; color: var(--success); margin-top: 10px; display: none; font-family: 'DM Mono', monospace; }
+.warn { background: #fff8e6; border: 1px solid #f0c060; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #7a5a00; line-height: 1.6; margin-bottom: 16px; }
+
+/* Demo tab */
+.demo-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 16px; }
+.demo-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.demo-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.demo-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); outline: none; resize: vertical; min-height: 90px; line-height: 1.6; margin-bottom: 10px; }
+.demo-input::placeholder { color: var(--text3); }
+.demo-btn { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; padding: 9px 20px; background: var(--accent); color: white; border: none; border-radius: 7px; cursor: pointer; }
+.demo-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.preview-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.card-header { padding: 14px 18px; background: var(--bg); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; }
+.card-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); }
+.card-body { padding: 18px; }
+.card-vocab { font-family: 'Instrument Serif', serif; font-size: 28px; margin-bottom: 16px; }
+.pfields { display: flex; flex-direction: column; gap: 10px; }
+.pfield { display: flex; flex-direction: column; gap: 4px; }
+.pfield label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.pfield input, .pfield textarea { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); outline: none; resize: vertical; line-height: 1.5; width: 100%; }
+.pfield textarea { min-height: 54px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card-footer { padding: 14px 18px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+.status-text { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; display: flex; align-items: center; gap: 8px; }
+.status-text.error { color: var(--error); }
+.status-text.success { color: var(--success); }
+.spinner { width: 12px; height: 12px; border: 1.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.65s linear infinite; flex-shrink: 0; }
+.footer-btns { display: flex; gap: 8px; }
+.btn-discard { font-family: 'DM Mono', monospace; font-size: 11px; padding: 0 14px; height: 34px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text2); cursor: pointer; }
+.btn-save { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; padding: 0 18px; height: 34px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; }
+.btn-save:disabled { opacity: 0.35; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<script>
+// ── Detect mode: popup (has ?text=) vs main app ───────────────
+const urlParams = new URLSearchParams(window.location.search);
+const incomingText = urlParams.get('text');
+const incomingMode = !!incomingText;
+</script>
+
+<!-- ══ POPUP MODE ════════════════════════════════════════════ -->
+<div class="popup-wrap" id="popupMode" style="display:none;">
+  <div class="hd">
+    <div class="ttl">Vocab <em>Saver</em></div>
+    <span class="tag" id="popupSrcTag"></span>
+  </div>
+  <div class="vocab" id="popupVocab"></div>
+  <div class="r2">
+    <div class="field"><label>Pronunciation</label><input type="text" id="p_pron" /></div>
+    <div class="field"><label>Type of word</label><input type="text" id="p_type" /></div>
+  </div>
+  <div class="field"><label>Meaning</label><textarea id="p_meaning"></textarea></div>
+  <div class="field"><label>Collocation</label><textarea id="p_col" style="min-height:42px;"></textarea></div>
+  <div class="field"><label>Example</label><textarea id="p_ex"></textarea></div>
+  <div class="ft">
+    <div class="st" id="popupStatus"></div>
+    <div class="btns">
+      <button class="bd" id="cancelBtn">Huỷ</button>
+      <button class="bs" id="saveBtn">Lưu vào Sheet →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP MODE ═════════════════════════════════════════ -->
+<div class="app" id="mainMode" style="display:none;">
+  <div class="header">
+    <div class="header-top">
+      <h1 class="title">Vocab <em>Saver</em></h1>
+      <span class="badge">v5.0 · OpenAI</span>
+    </div>
+    <p class="subtitle">Bôi đen định nghĩa trên Cambridge / Oxford → click bookmarklet → lưu vào Google Sheet</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('setup',this)">setup</button>
+    <button class="tab" onclick="switchTab('demo',this)">thử ngay</button>
+    <button class="tab" onclick="switchTab('config',this)">cấu hình</button>
+  </div>
+
+  <!-- SETUP -->
+  <div class="tab-panel active" id="tab-setup">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Đảm bảo Google Sheet có đúng header</div>
+          <div class="step-desc">Hàng 1 trong Sheet cần có thứ tự cột:</div>
+          <div class="code-block">Vocab | Pronunciation | Type of word | Meaning | Collocation | Example | Source | Date Added</div>
+          <div class="step-desc">Vào <strong>Share → Anyone with the link → Editor</strong> để cho phép ghi dữ liệu.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Điền API keys</div>
+          <div class="step-desc">Sang tab <strong>cấu hình</strong> → điền OpenAI API Key → bấm <strong>Lưu</strong>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Tạo bookmarklet</div>
+          <div class="step-desc">Chuột phải vào bookmark bar → <strong>Add page...</strong><br>
+          Name: <code>📚 Save Vocab</code><br>
+          URL: copy đoạn code bên dưới paste vào.</div>
+          <div class="code-block" id="bmCode"></div>
+          <button class="copy-btn" id="copyBmBtn" onclick="copyBookmarklet()">Copy bookmarklet code</button>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Dùng thôi!</div>
+          <div class="step-desc">Vào Cambridge / Oxford → <strong>bôi đen khu vực định nghĩa</strong> → click <strong>📚 Save Vocab</strong> → popup hiện ra → kiểm tra → <strong>Lưu vào Sheet</strong>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEMO -->
+  <div class="tab-panel" id="tab-demo">
+    <p class="demo-desc">Paste đoạn text bôi đen từ Cambridge / Oxford vào đây để thử.</p>
+    <div class="demo-box">
+      <div class="demo-label">Text bôi đen từ trang từ điển</div>
+      <textarea class="demo-input" id="demoText" placeholder="Ví dụ:&#10;clarity&#10;noun [ U ]&#10;UK /ˈklær.ə.ti/ US /ˈkler.ə.t̬i/&#10;the quality of being clear and easy to understand:&#10;There has been a call for greater clarity in this area of the law."></textarea>
+      <button class="demo-btn" id="demoBtn" onclick="runDemo()">→ Parse với GPT-4o mini</button>
+    </div>
+    <div id="demoPreviewWrap" style="display:none;">
+      <div class="preview-card">
+        <div class="card-header">
+          <span class="tag tc">Cambridge / Oxford</span>
+          <span class="card-hint">kiểm tra và chỉnh nếu cần</span>
+        </div>
+        <div class="card-body">
+          <div class="card-vocab" id="demoVocab"></div>
+          <div class="pfields">
+            <div class="row2">
+              <div class="pfield"><label>Pronunciation</label><input type="text" id="d_pron" /></div>
+              <div class="pfield"><label>Type of word</label><input type="text" id="d_type" /></div>
+            </div>
+            <div class="pfield"><label>Meaning</label><textarea id="d_meaning"></textarea></div>
+            <div class="pfield"><label>Collocation</label><textarea id="d_col" style="min-height:42px;"></textarea></div>
+            <div class="pfield"><label>Example</label><textarea id="d_ex"></textarea></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="status-text" id="demoStatus"></div>
+          <div class="footer-btns">
+            <button class="btn-discard" onclick="document.getElementById('demoPreviewWrap').style.display='none'">Huỷ</button>
+            <button class="btn-save" id="demoSaveBtn" onclick="saveDemo()">Lưu vào Sheet →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="tab-panel" id="tab-config">
+    <div class="warn">⚠️ Tạo API key tại <strong>platform.openai.com/api-keys</strong>. Không chia sẻ key với ai.</div>
+    <div class="config-fields">
+      <div class="cfg-field"><label>OpenAI API Key</label><input type="password" id="cfg_openai" placeholder="sk-proj-..." /></div>
+      <div class="cfg-field"><label>Google Sheets API Key</label><input type="password" id="cfg_google" placeholder="AIzaSy..." /></div>
+      <div class="cfg-field"><label>Spreadsheet ID</label><input type="text" id="cfg_sheet" placeholder="14iYvhss..." /></div>
+    </div>
+    <button class="save-btn" onclick="saveConfig()">Lưu cấu hình</button>
+    <div class="saved-msg" id="savedMsg">✓ Đã lưu!</div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = {
+  google: "AIzaSyB84eAUDjb5oFCYC-mbJ6aOQtqVO8V7nxs",
+  sheet:  "14iYvhssVBYbBKZaOnQ-ASjBeP6izCKjFFWgNc0RFL1o"
+};
+const APP_URL = "https://yonnman.github.io/Vocab-saver-/";
+
+function loadConfig() {
+  return {
+    openai: localStorage.getItem("vs_openai") || "",
+    google: localStorage.getItem("vs_google") || DEFAULTS.google,
+    sheet:  localStorage.getItem("vs_sheet")  || DEFAULTS.sheet,
+  };
+}
+
+function saveConfig() {
+  const o  = document.getElementById("cfg_openai").value.trim();
+  const go = document.getElementById("cfg_google").value.trim();
+  const s  = document.getElementById("cfg_sheet").value.trim();
+  if (o)  localStorage.setItem("vs_openai", o);
+  if (go) localStorage.setItem("vs_google", go);
+  if (s)  localStorage.setItem("vs_sheet",  s);
+  document.getElementById("savedMsg").style.display = "block";
+  renderBookmarkletCode();
+  setTimeout(() => document.getElementById("savedMsg").style.display = "none", 2500);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  el.classList.add("active");
+}
+
+function getBookmarkletCode() {
+  return `javascript:(function(){var s=(window.getSelection?window.getSelection().toString():'').trim();if(!s||s.length<5){alert('Bôi đen định nghĩa trước nhé!');return;}var src=location.href.includes('cambridge.org')?'Cambridge':location.href.includes('oxfordlearnersdictionaries.com')?'Oxford':'Dictionary';window.open('${APP_URL}?src='+encodeURIComponent(src)+'&text='+encodeURIComponent(s),'VocabSaver','width=500,height=640,top=80,left=80,resizable=yes');})();`;
+}
+
+function renderBookmarkletCode() {
+  const el = document.getElementById("bmCode");
+  if (el) el.textContent = getBookmarkletCode();
+}
+
+function copyBookmarklet() {
+  navigator.clipboard.writeText(getBookmarkletCode()).then(() => {
+    const btn = document.getElementById("copyBmBtn");
+    btn.textContent = "✓ Đã copy!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy bookmarklet code"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+// ── OpenAI parse ──────────────────────────────────────────────
+async function parseWithOpenAI(text, source, apiKey) {
+  const prompt = `You are an expert English dictionary parser. Extract vocabulary from this ${source} dictionary text.
+Return ONLY a valid JSON object with keys: vocab, pronunciation, type, meaning, collocation, example.
+- vocab: headword only
+- pronunciation: IPA with slashes, UK preferred e.g. /ˈklær.ə.ti/
+- type: part of speech only (noun / verb / adjective / adverb / etc.)
+- meaning: clean concise definition, no trailing colon
+- collocation: 3-5 common collocations comma-separated; use knowledge if not in text
+- example: one full sentence from text, or empty string
+Return ONLY the JSON. No markdown fences.
+
+Text:
+${text}`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], temperature: 0.1, max_tokens: 512 })
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+  const data = await res.json();
+  return JSON.parse(data.choices[0].message.content.replace(/```json|```/g, "").trim());
+}
+
+async function saveToSheet(fields, source) {
+  const cfg = loadConfig();
+  const values = [[fields.vocab, fields.pron, fields.type, fields.meaning, fields.col, fields.ex, source, new Date().toLocaleDateString("vi-VN")]];
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheet}/values/Sheet1!A:H:append?valueInputOption=USER_ENTERED&key=${cfg.google}`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values }) }
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+}
+
+// ── Demo ──────────────────────────────────────────────────────
+async function runDemo() {
+  const text = document.getElementById("demoText").value.trim();
+  if (!text) return;
+  const cfg = loadConfig();
+  if (!cfg.openai) { alert("Điền OpenAI API Key trong tab cấu hình trước!"); return; }
+  const btn = document.getElementById("demoBtn");
+  btn.disabled = true; btn.textContent = "Đang parse...";
+  try {
+    const p = await parseWithOpenAI(text, "Cambridge/Oxford", cfg.openai);
+    document.getElementById("demoVocab").textContent = p.vocab || "";
+    document.getElementById("d_pron").value    = p.pronunciation || "";
+    document.getElementById("d_type").value    = p.type || "";
+    document.getElementById("d_meaning").value = p.meaning || "";
+    document.getElementById("d_col").value     = p.collocation || "";
+    document.getElementById("d_ex").value      = p.example || "";
+    document.getElementById("demoPreviewWrap").style.display = "block";
+  } catch(e) { alert("Lỗi: " + e.message); }
+  btn.disabled = false; btn.textContent = "→ Parse với GPT-4o mini";
+}
+
+async function saveDemo() {
+  const vocab = document.getElementById("demoVocab").textContent.trim();
+  if (!vocab) return;
+  const btn = document.getElementById("demoSaveBtn");
+  const st  = document.getElementById("demoStatus");
+  btn.disabled = true;
+  st.className = "status-text";
+  st.innerHTML = '<div class="spinner"></div> Đang lưu...';
+  try {
+    await saveToSheet({ vocab, pron: document.getElementById("d_pron").value, type: document.getElementById("d_type").value, meaning: document.getElementById("d_meaning").value, col: document.getElementById("d_col").value, ex: document.getElementById("d_ex").value }, "Cambridge");
+    st.className = "status-text success";
+    st.textContent = `✓ Đã lưu "${vocab}"!`;
+    setTimeout(() => { document.getElementById("demoPreviewWrap").style.display = "none"; document.getElementById("demoText").value = ""; st.textContent = ""; }, 2000);
+  } catch(e) { st.className = "status-text error"; st.textContent = "Lỗi: " + e.message; }
+  btn.disabled = false;
+}
+
+// ── POPUP MODE logic ──────────────────────────────────────────
+async function initPopup() {
+  const text = urlParams.get('text') || '';
+  const src  = urlParams.get('src')  || 'Dictionary';
+
+  document.getElementById("popupSrcTag").textContent = src;
+  document.getElementById("popupSrcTag").className   = "tag " + (src === "Cambridge" ? "tc" : "to");
+
+  const st = document.getElementById("popupStatus");
+  st.innerHTML = '<span class="sp"></span> AI đang parse...';
+
+  document.getElementById("cancelBtn").addEventListener("click", () => window.close());
+  document.getElementById("saveBtn").addEventListener("click", doPopupSave);
+
+  const cfg = loadConfig();
+  if (!cfg.openai) {
+    st.className = "st err";
+    st.textContent = "Chưa có OpenAI API Key — vào trang chính để cấu hình.";
+    return;
+  }
+
+  try {
+    const p = await parseWithOpenAI(text, src, cfg.openai);
+    document.getElementById("popupVocab").textContent = p.vocab || "";
+    document.getElementById("p_pron").value    = p.pronunciation || "";
+    document.getElementById("p_type").value    = p.type || "";
+    document.getElementById("p_meaning").value = p.meaning || "";
+    document.getElementById("p_col").value     = p.collocation || "";
+    document.getElementById("p_ex").value      = p.example || "";
+    st.className = "st"; st.textContent = "";
+  } catch(e) {
+    st.className = "st err"; st.textContent = "Lỗi parse: " + e.message;
+  }
+}
+
+async function doPopupSave() {
+  const vocab = document.getElementById("popupVocab").textContent.trim();
+  if (!vocab) return;
+  const btn = document.getElementById("saveBtn");
+  const st  = document.getElementById("popupStatus");
+  btn.disabled = true;
+  st.className = "st";
+  st.innerHTML = '<span class="sp"></span> Đang lưu...';
+  const src = document.getElementById("popupSrcTag").textContent;
+  try {
+    await saveToSheet({
+      vocab,
+      pron:    document.getElementById("p_pron").value,
+      type:    document.getElementById("p_type").value,
+      meaning: document.getElementById("p_meaning").value,
+      col:     document.getElementById("p_col").value,
+      ex:      document.getElementById("p_ex").value,
+    }, src);
+    st.className = "st ok";
+    st.textContent = "✓ Đã lưu \"" + vocab + "\"!";
+    setTimeout(() => window.close(), 1800);
+  } catch(e) {
+    st.className = "st err"; st.textContent = "Lỗi: " + e.message;
+    btn.disabled = false;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  if (incomingMode) {
+    document.getElementById("popupMode").style.display = "block";
+    initPopup();
+  } else {
+    document.getElementById("mainMode").style.display = "block";
+    const cfg = loadConfig();
+    document.getElementById("cfg_openai").value = cfg.openai;
+    document.getElementById("cfg_google").value = cfg.google;
+    document.getElementById("cfg_sheet").value  = cfg.sheet;
+    renderBookmarkletCode();
+  }
+});
+</script>
+</body>
+</html>
