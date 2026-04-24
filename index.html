@@ -327,15 +327,25 @@ ${text}`;
   return JSON.parse(data.choices[0].message.content.replace(/```json|```/g, "").trim());
 }
 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKINp6by6ps4Br6LKR5-FpHdORt9GobPrAC9UIvLDWC8yLtZFUONa3Q56PAEkVMsUW/exec";
+
 async function saveToSheet(fields, source) {
-  const cfg = loadConfig();
-  const values = [[fields.vocab, fields.pron, fields.type, fields.meaning, fields.col, fields.ex, source, new Date().toLocaleDateString("vi-VN")]];
-  const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheet}/values/Sheet1!A:H:append?valueInputOption=USER_ENTERED&key=${cfg.google}`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values }) }
-  );
+  const body = {
+    vocab:         fields.vocab,
+    pronunciation: fields.pron,
+    type:          fields.type,
+    meaning:       fields.meaning,
+    collocation:   fields.col,
+    example:       fields.ex,
+    source:        source,
+    date:          new Date().toLocaleDateString("vi-VN")
+  };
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  if (!data.ok) throw new Error(data.error || "Lỗi không xác định");
 }
 
 // ── Demo ──────────────────────────────────────────────────────
