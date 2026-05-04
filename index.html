@@ -168,7 +168,7 @@ const incomingMode = !!incomingText;
         <div class="step-content">
           <div class="step-title">Đảm bảo Google Sheet có đúng header</div>
           <div class="step-desc">Hàng 1 trong Sheet cần có thứ tự cột:</div>
-          <div class="code-block">No | Vocab | Pronunciation | Type of word | Meaning | Collocation | Example | Source | Date Added</div>
+          <div class="code-block">Vocab | Pronunciation | Type of word | Meaning | Collocation | Example | Source | Date Added</div>
           <div class="step-desc">Vào <strong>Share → Anyone with the link → Editor</strong> để cho phép ghi dữ liệu.</div>
         </div>
       </div>
@@ -330,7 +330,7 @@ ${text}`;
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKINp6by6ps4Br6LKR5-FpHdORt9GobPrAC9UIvLDWC8yLtZFUONa3Q56PAEkVMsUW/exec";
 
 async function saveToSheet(fields, source) {
-  const body = {
+  const params = new URLSearchParams({
     vocab:         fields.vocab,
     pronunciation: fields.pron,
     type:          fields.type,
@@ -339,10 +339,10 @@ async function saveToSheet(fields, source) {
     example:       fields.ex,
     source:        source,
     date:          new Date().toLocaleDateString("vi-VN")
-  };
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(body)
+  });
+  const res = await fetch(APPS_SCRIPT_URL + "?" + params.toString(), {
+    method: "GET",
+    redirect: "follow"
   });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || "Lỗi không xác định");
